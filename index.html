@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSDC TVM | Asset Core 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        :root {
+            --brand-primary: #0e5774;
+            --brand-surface: #f4f8fa;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--brand-surface);
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .neo-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(14, 87, 116, 0.08);
+            box-shadow: 0 4px 20px -5px rgba(14, 87, 116, 0.05);
+        }
+
+        .brand-gradient {
+            background: linear-gradient(135deg, #0e5774 0%, #063d52 100%);
+        }
+
+        /* Responsive Table adjustments */
+        @media (max-width: 768px) {
+            .mobile-stack { display: block; }
+            .desktop-only { display: none; }
+            .card-row { margin-bottom: 1rem; padding: 1.5rem; border-radius: 1.5rem; background: white; border: 1px solid #e2e8f0; }
+        }
+
+        .search-ring:focus {
+            box-shadow: 0 0 0 4px rgba(14, 87, 116, 0.15);
+            border-color: #0e5774;
+        }
+
+        .copy-success { background-color: #0e5774 !important; color: white !important; }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <nav class="brand-gradient text-white py-5 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-xl backdrop-blur-md">
+                    <i data-lucide="database" class="w-5 h-5 text-sky-300"></i>
+                </div>
+                <h1 class="text-lg font-bold tracking-tight">DSDC TVM <span class="font-light opacity-70 italic">AssetManager</span></h1>
+            </div>
+            <div id="statusPulse" class="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-100">Live</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 mt-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-10">
+            
+            <div class="md:col-span-6 neo-card p-6 rounded-[2rem] flex items-center justify-between border-l-8 border-[#0e5774]">
+                <div>
+                    <p class="text-[10px] font-black text-[#0e5774] uppercase tracking-[0.2em] mb-1">Standard Issue Model</p>
+                    <h3 class="text-2xl font-bold text-slate-800">HP 250 R G10</h3>
+                    <p class="text-xs text-slate-500 font-medium mt-1">Core i3 100U • 8GB RAM • 512GB SSD</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <i data-lucide="laptop" class="w-8 h-8 text-[#0e5774]"></i>
+                </div>
+            </div>
+
+            <div class="md:col-span-3 neo-card p-6 rounded-[2rem] flex flex-col justify-center">
+                <p class="text-[10px] font-black text-[#0e5774] uppercase tracking-[0.2em] mb-1 text-center">Total Assets</p>
+                <h3 id="masterQty" class="text-4xl font-bold text-slate-800 text-center tracking-tighter">--</h3>
+                <div class="w-12 h-1 bg-[#0e5774]/20 mx-auto mt-2 rounded-full">
+                    <div class="w-full h-full bg-[#0e5774] rounded-full"></div>
+                </div>
+            </div>
+
+            <div class="md:col-span-3 neo-card p-6 rounded-[2rem] bg-[#0e5774]/[0.02] relative overflow-hidden group">
+                <div class="absolute right-[-15px] bottom-[-15px] opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+                    <i data-lucide="shield-check" class="w-24 h-24 text-[#0e5774]"></i>
+                </div>
+                <p class="text-[10px] font-black text-[#0e5774] uppercase tracking-[0.2em] mb-1">Warranty Days Left</p>
+                <h3 id="daysRemaining" class="text-3xl font-bold text-slate-800 tracking-tighter">Calculating...</h3>
+                <p id="expiryDate" class="text-[9px] text-slate-400 mt-2 font-mono uppercase font-bold tracking-wider italic"></p>
+            </div>
+
+        </div>
+
+        <div class="max-w-2xl mx-auto mb-12">
+            <div class="relative group">
+                <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0e5774] transition-colors w-5 h-5"></i>
+                <input type="text" id="searchInput" 
+                       placeholder="Last 3 digits or Serial..." 
+                       class="search-ring w-full pl-14 pr-6 py-4 rounded-2xl text-base shadow-sm font-semibold transition-all border border-slate-200 outline-none">
+            </div>
+            <div class="flex justify-center mt-4">
+                <span class="px-4 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Showing <span id="countDisplay" class="text-[#0e5774]">0</span> Inventory Items
+                </span>
+            </div>
+        </div>
+
+        <div class="neo-card rounded-[2.5rem] overflow-hidden">
+            <div id="desktopView" class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sl</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Serial Number</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Charger ID</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Product Key</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+
+            <div id="mobileView" class="md:hidden p-4 space-y-4">
+                </div>
+        </div>
+
+    </main>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRKuH3OMhuBaVLtK5EJwi2CJlDXuv_dDgTq9O_m21yef8GHlsT0AJyI44G4rFXjSfJI7E4IkC2M9bOu/pub?output=csv';
+        let inventoryData = [];
+
+        function calculateWarranty(purchaseDateStr) {
+            const parts = purchaseDateStr.split('/');
+            const purchaseDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            const expiryDate = new Date(purchaseDate);
+            expiryDate.setFullYear(expiryDate.getFullYear() + 3);
+            
+            const today = new Date();
+            const diffTime = expiryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            document.getElementById('daysRemaining').innerText = `${diffDays} Days`;
+            document.getElementById('expiryDate').innerText = `Valid until: ${expiryDate.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}`;
+        }
+
+        async function fetchData() {
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    inventoryData = results.data.filter(row => row['Laptop Serial Number']);
+                    calculateWarranty('30/03/2026');
+                    document.getElementById('masterQty').innerText = inventoryData.length;
+                    renderData(inventoryData);
+                }
+            });
+        }
+
+        function renderData(data) {
+            const tbody = document.getElementById('inventoryBody');
+            const mobileContainer = document.getElementById('mobileView');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            document.getElementById('countDisplay').innerText = data.length;
+
+            data.forEach(item => {
+                const pKey = item['PRODUCT\nKEY'] || item['PRODUCT KEY'] || 'N/A';
+                
+                // Desktop Row
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-[#0e5774]/[0.02] transition-colors group';
+                row.innerHTML = `
+                    <td class="px-8 py-5 text-xs font-bold text-slate-300">#${item['Sl No']}</td>
+                    <td class="px-8 py-5"><span class="font-mono text-sm font-bold text-[#0e5774]">${item['Laptop Serial Number']}</span></td>
+                    <td class="px-8 py-5 text-xs font-mono text-slate-500">${item['Charger Unique No']}</td>
+                    <td class="px-8 py-5 text-right">
+                        <button onclick="copyText(this, '${pKey}')" class="px-4 py-2 bg-slate-100 rounded-xl text-[11px] font-mono font-bold hover:bg-[#0e5774] hover:text-white transition-all border border-slate-200">
+                            ${pKey}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                // Mobile Card
+                const mCard = document.createElement('div');
+                mCard.className = 'p-5 bg-white rounded-3xl border border-slate-200 shadow-sm';
+                mCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-[10px] font-black text-slate-300 uppercase">Unit #${item['Sl No']}</span>
+                        <span class="text-xs font-mono font-bold text-[#0e5774] bg-sky-50 px-2 py-1 rounded-lg">${item['Laptop Serial Number']}</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-[9px] uppercase text-slate-400 font-bold mb-1">Charger Unique No</p>
+                        <p class="text-xs font-mono text-slate-600">${item['Charger Unique No']}</p>
+                    </div>
+                    <button onclick="copyText(this, '${pKey}')" class="w-full py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-mono font-bold text-slate-700 flex justify-between items-center px-4">
+                        <span>KEY: ${pKey}</span>
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                    </button>
+                `;
+                mobileContainer.appendChild(mCard);
+            });
+            lucide.createIcons();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = inventoryData.filter(item => 
+                (item['Laptop Serial Number'] || '').toLowerCase().includes(term) ||
+                (item['PRODUCT\nKEY'] || item['PRODUCT KEY'] || '').toLowerCase().includes(term)
+            );
+            renderData(filtered);
+        });
+
+        function copyText(btn, text) {
+            navigator.clipboard.writeText(text);
+            const originalText = btn.innerHTML;
+            btn.classList.add('copy-success');
+            btn.innerText = 'COPIED!';
+            setTimeout(() => {
+                btn.classList.remove('copy-success');
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+            }, 1000);
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
